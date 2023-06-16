@@ -1,0 +1,149 @@
+<style>
+#previewTest {
+    height: 200px;
+    width: auto;
+    border: black dashed 5px;
+    overflow: scroll;
+}
+
+#displayResult {
+    height: 200px;
+    width: 500px;
+}
+</style>
+<script type='text/javascript'>
+    function encodeImageFileAsURL() {
+        var filesSelected = document.getElementById("inputFileToLoad").files;
+        if (filesSelected.length > 0) {
+            var fileToLoad = filesSelected[0];
+            var fileReader = new FileReader();
+
+            fileReader.onload = function(fileLoadedEvent) {
+                // data: base64
+                var srcData = fileLoadedEvent.target.result;
+
+                imageSearch = srcData.indexOf("image");
+                videoSearch = srcData.indexOf("video");
+                audioSearch = srcData.indexOf("audio");
+
+                if ((imageSearch > -1) && (videoSearch == -1) && (audioSearch == -1)) {
+                    displayPreviewOnly = "<img id = 'displayImage' src = '" + srcData + "'/>";
+                }
+
+                else if ((imageSearch == -1) && (videoSearch > -1) && (audioSearch == -1)) {
+                    displayPreviewOnly = "<video autoplay controls>"
+                    + "<source src='" + srcData + "'/>"
+                    + "</video>";
+                }
+
+                else if ((imageSearch == -1) && (videoSearch == -1) && (audioSearch > -1)) {
+                    displayPreviewOnly = "<audio autoplay controls>"
+                    + "<source src='" + srcData + "'/>"
+                    + "</audio>";
+                }
+
+                document.getElementById("previewTest").innerHTML = displayPreviewOnly;
+                document.getElementById("displayResult").innerHTML = displayPreviewOnly;
+
+                document.getElementById("content").value = srcData;
+            }
+            fileReader.readAsDataURL(fileToLoad);
+        }
+    }
+
+    function searchString() {
+        srcData = document.getElementById("content").value;
+
+        imageSearch = srcData.indexOf("image");
+        videoSearch = srcData.indexOf("video");
+        audioSearch = srcData.indexOf("audio");
+    }
+
+    function fileName() {
+        getFilename = prompt("Enter File Name: ", "new file");
+
+        if (getFilename == null) {
+            getFilename = "new file";
+        }
+
+        searchString();
+
+        if ((imageSearch > -1) && (videoSearch == -1) && (audioSearch == -1)) {
+            applyFilename = getFilename + ".svg";
+        }
+
+        else if ( (imageSearch == -1) && ((videoSearch > -1) || (audioSearch > -1)) ) {
+            applyFilename = getFilename + ".html";
+        }
+
+        return applyFilename;
+    }
+
+    function dynamic_text() {
+        searchString();
+
+        if ((imageSearch > -1) && (videoSearch == -1) && (audioSearch == -1)) {
+            realWidth = document.getElementById("displayImage").naturalWidth;
+            realHeight = document.getElementById("displayImage").naturalHeight;
+
+            xmlLines = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>";
+            doctypeLines = "<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>";
+            svgStartLines = "<svg version='1.1'"
+                + " id='Layer_1'"
+                + " xmlns='http://www.w3.org/2000/svg'"
+                + " xmlns:xlink='http://www.w3.org/1999/xlink'"
+                + " x='0px' y='0px' width='" + realWidth + "px' height='" + realHeight + "px'"
+                + " viewBox='0 0 " + realWidth + " " + realHeight + "'"
+                + " enable-background='new 0 0 " + realWidth + " " + realHeight + "'"
+                + " xml:space='preserve'>";
+            imageStartLines = "<image id='image0'"
+                + " width='" + realWidth + "' height='" + realHeight + "'"
+                + " x='0' y='0' href='";
+            imageEndLines = "'/>";
+            svgEndLines = "</svg>";
+
+            compiledLines = xmlLines + doctypeLines + svgStartLines + imageStartLines + srcData + imageEndLines + svgEndLines;
+        }
+
+        else if ((imageSearch == -1) && (videoSearch > -1) && (audioSearch == -1)) {
+            compiledLines = "<video autoplay controls>"
+                + "<source src='" + srcData + "'/>"
+                + "</video>";
+        }
+
+        else if ((imageSearch == -1) && (videoSearch == -1) && (audioSearch > -1)) {
+            compiledLines = "<audio autoplay controls>"
+                + "<source src='" + srcData + "'/>"
+                + "</audio>";
+        }
+
+        return compiledLines;
+    }
+
+    function download_file(name, contents, mime_type) {
+        mime_type = mime_type || "text/plain";
+
+        var blob = new Blob([contents], {type: mime_type});
+
+        var dlink = document.createElement('a');
+        dlink.download = name;
+        dlink.href = window.URL.createObjectURL(blob);
+        dlink.onclick = function(e) {
+            // revokeObjectURL needs a delay to work properly
+            var that = this;
+            setTimeout(function() {
+                window.URL.revokeObjectURL(that.href);
+            }, 1500);
+        };
+
+        dlink.click();
+        dlink.remove();
+    }
+</script>
+This snippet can convert your string, image and even video file to Base64 string data.
+<br/><br/>
+<input id="inputFileToLoad" type="file" onchange="encodeImageFileAsURL();" />
+<div id="previewTest"></div>
+<textarea id = "displayResult"></textarea><br/>
+<input type = "hidden" id = "content"/>
+<button onclick='download_file(fileName(), dynamic_text())'>Download Converted File</button>
